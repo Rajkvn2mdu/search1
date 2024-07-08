@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Excel Data Search Engine</title>
+  <style>
+    body {
+      background-color: #070707;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #0ff, 0 0 40px #0ff, 0 0 70px #0ff, 0 0 80px #0ff, 0 0 100px #0ff, 0 0 150px #0ff;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .upload-btn {
+      cursor: pointer;
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #0ff;
+      color: #000;
+      font-size: 1.2em;
+      border: none;
+      outline: none;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+
+    .upload-btn:hover {
+      background-color: #0dd;
+    }
+
+    #searchInput, #searchInput::placeholder {
+      font-size: 1em;
+      padding: 10px;
+      border: 2px solid #0ff;
+      background-color: transparent;
+      color: #0ff;
+      border-radius: 5px;
+      margin-top: 20px;
+      width: 300px;
+      transition: border-color 0.3s ease;
+    }
+
+    #searchInput:focus {
+      border-color: #0dd;
+    }
+
+    #searchBtn {
+      cursor: pointer;
+      background-color: #0ff;
+      border: none;
+      color: #000;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      margin-left: 10px;
+      border-radius: 5px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    #searchBtn:hover {
+      background-color: #0dd;
+    }
+
+    #searchResults {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .result-item {
+      background-color: rgba(15, 15, 15, 0.8);
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    .result-item h3 {
+      color: #0ff;
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+
+    .result-item div {
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      #searchInput {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Neon Excel Data Search Engine</h1>
+
+  <!-- File upload form -->
+  <label for="fileInput" class="upload-btn">Upload Excel File</label>
+  <input type="file" id="fileInput" accept=".xlsx" onchange="uploadFile()">
+
+  <hr>
+
+  <!-- Search form -->
+  <input type="text" id="searchInput" placeholder="Enter search term">
+  <button id="searchBtn" onclick="search()">Search</button>
+
+  <!-- Search results -->
+  <div id="searchResults"></div>
+
+  <script>
+    let excelData = [];
+
+    function uploadFile() {
+      let fileInput = document.getElementById('fileInput');
+      let file = fileInput.files[0];
+
+      if (!file) {
+        alert('No file selected.');
+        return;
+      }
+
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let data = new Uint8Array(e.target.result);
+        let workbook = XLSX.read(data, { type: 'array' });
+
+        // Extract data from each sheet
+        workbook.SheetNames.forEach(sheetName => {
+          let sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+          excelData.push(...sheetData);
+        });
+
+        alert('File uploaded successfully.');
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function search() {
+      let searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+      let searchResults = [];
+
+      if (searchTerm === '') {
+        alert('Please enter a search term.');
+        return;
+      }
+
+      excelData.forEach(row => {
+        for (let key in row) {
+          if (row[key].toString().toLowerCase().includes(searchTerm)) {
+            searchResults.push(row);
+            break;
+          }
+        }
+      });
+
+      displaySearchResults(searchResults);
+    }
+
+    function displaySearchResults(results) {
+      let resultsContainer = document.getElementById('searchResults');
+      resultsContainer.innerHTML = '';
+
+      if (results.length === 0) {
+        resultsContainer.innerHTML = '<p>No results found.</p>';
+      } else {
+        results.forEach(result => {
+          let resultDiv = document.createElement('div');
+          resultDiv.classList.add('result-item');
+
+          let html = `<h3>Result:</h3>`;
+          for (let key in result) {
+            html += `<div><strong>${key}:</strong> ${result[key]}</div>`;
+          }
+          resultDiv.innerHTML = html;
+
+          resultsContainer.appendChild(resultDiv);
+        });
+      }
+    }
+  </script>
+
+  <!-- Load XLSX library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+</body>
+</html>
